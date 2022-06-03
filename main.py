@@ -89,11 +89,9 @@ async def get_current_user(token: Optional[str] = Header(default=None)):
 
     return user
 
+
 async def get_user_by_username(username):
-    try:
-        user = await UserPydantic.from_queryset_single(User.get(username=username))
-    except HTTPException:
-        None
+    return await User.get(username=username)
 
 
 def create_access_token(payload: dict, expires_delta: timedelta | None = None):
@@ -122,7 +120,7 @@ async def index():
 @app.post("/auth/register", response_model=Token)
 async def register_user(user: UserInPydantic):
     print(user.username)
-    is_valid_credentials =  check_valid_credentials(
+    is_valid_credentials = check_valid_credentials(
         user.username, user.passwd
     )
     if not is_valid_credentials:
@@ -148,7 +146,7 @@ async def register_user(user: UserInPydantic):
     access_token = create_access_token(
         payload={"sub": user.username}, expires_delta=access_token_expires
     )
-    return {"access_token":access_token, "token_type":"bearer"}
+    return {"access_token": access_token, "token_type": "bearer"}
 
 
 async def check_is_username_available(username):
@@ -166,8 +164,34 @@ def check_valid_credentials(username, passwd):
 
 
 @app.post("/auth/login", response_model=Token)
-def login_user(user: UserInPydantic):
-    pass
+async def login_user(user: UserInPydantic):
+    user_obj = await get_user_by_username(user.username)
+
+    if not user_obj:
+        HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No User with this Username exists."
+        )
+    is_passwd_valid = validate_password(
+        provided_passwd=user.passwd,
+        hashed_passwd=user_obj.passwd
+    )
+
+    if not is_passwd_valid:
+        HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Incorrect Password"
+        )
+
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        payload={"sub": user_obj.username}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+def validate_password(provided_passwd, hashed_passwd):
+    return pwd_context.verify(provided_passwd, hashed_passwd)
 
 
 register_tortoise(
