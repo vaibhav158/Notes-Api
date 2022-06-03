@@ -1,0 +1,4 @@
+venv/
+notesdb.sqlite
+notesdb.sqlite-shm
+notesdb.sqlite-wal
