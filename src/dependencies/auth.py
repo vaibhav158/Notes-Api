@@ -6,19 +6,16 @@ from fastapi.security import APIKeyHeader
 from starlette import requests, status
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.api.dependencies.database import get_repository
-from app.core.config import get_app_settings
-from app.core.settings.app import AppSettings
-from app.db.errors import EntityDoesNotExist
-from app.db.repositories.users import UsersRepository
-from app.models.domain.users import User
-from app.resources import strings
-from app.services import jwt
+from src.config import get_app_settings, AppSettings
+from domain.model.user import User
+from src.utils import error_messages
+from src.auth import jwt_service as jwt
+from data.repository import UserRepository
 
 HEADER_KEY = "Authorization"
 
 
-class RWAPIKeyHeader(APIKeyHeader):
+class MyAPIKeyHeader(APIKeyHeader):
     async def __call__(  # noqa: WPS610
         self,
         request: requests.Request,
@@ -32,19 +29,8 @@ class RWAPIKeyHeader(APIKeyHeader):
             )
 
 
-def get_current_user_authorizer(*, required: bool = True) -> Callable:  # type: ignore
-    return _get_current_user if required else _get_current_user_optional
-
-
-def _get_authorization_header_retriever(
-    *,
-    required: bool = True,
-) -> Callable:  # type: ignore
-    return _get_authorization_header if required else _get_authorization_header_optional
-
-
 def _get_authorization_header(
-    api_key: str = Security(RWAPIKeyHeader(name=HEADER_KEY)),
+    api_key: str = Security(MyAPIKeyHeader(name=HEADER_KEY)),
     settings: AppSettings = Depends(get_app_settings),
 ) -> str:
     try:
@@ -63,21 +49,9 @@ def _get_authorization_header(
     return token
 
 
-def _get_authorization_header_optional(
-    authorization: Optional[str] = Security(
-        RWAPIKeyHeader(name=HEADER_KEY, auto_error=False),
-    ),
-    settings: AppSettings = Depends(get_app_settings),
-) -> str:
-    if authorization:
-        return _get_authorization_header(authorization, settings)
-
-    return ""
-
-
-async def _get_current_user(
-    users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-    token: str = Depends(_get_authorization_header_retriever()),
+async def get_current_user(
+    users_repo: UsersRepository = Depends(),
+    token: str = Depends(_get_authorization_header()),
     settings: AppSettings = Depends(get_app_settings),
 ) -> User:
     try:
@@ -91,21 +65,4 @@ async def _get_current_user(
             detail=strings.MALFORMED_PAYLOAD,
         )
 
-    try:
-        return await users_repo.get_user_by_username(username=username)
-    except EntityDoesNotExist:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=strings.MALFORMED_PAYLOAD,
-        )
-
-
-async def _get_current_user_optional(
-    repo: UsersRepository = Depends(get_repository(UsersRepository)),
-    token: str = Depends(_get_authorization_header_retriever(required=False)),
-    settings: AppSettings = Depends(get_app_settings),
-) -> Optional[User]:
-    if token:
-        return await _get_current_user(repo, token, settings)
-
-    return None
+    

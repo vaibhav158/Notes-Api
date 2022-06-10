@@ -4,12 +4,13 @@ from typing import Dict
 import jwt
 from pydantic import ValidationError
 
-from app.models.domain.users import User
-from app.models.schemas.jwt import JWTMeta, JWTUser
+from domain.model.user import User
+from domain.model.jwt import JWTPayload, JWTPrincipal
+
 
 JWT_SUBJECT = "access"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # one week
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # One Week
 
 
 def create_jwt_token(
@@ -20,13 +21,13 @@ def create_jwt_token(
 ) -> str:
     to_encode = jwt_content.copy()
     expire = datetime.utcnow() + expires_delta
-    to_encode.update(JWTMeta(exp=expire, sub=JWT_SUBJECT).dict())
+    to_encode.update(JWTPayload(exp=expire, sub=JWT_SUBJECT).dict())
     return jwt.encode(to_encode, secret_key, algorithm=ALGORITHM)
 
 
-def create_access_token_for_user(user: User, secret_key: str) -> str:
+def create_access_token_for_user(user: Dict, secret_key: str) -> str:
     return create_jwt_token(
-        jwt_content=JWTUser(username=user.username).dict(),
+        jwt_content=JWTPrincipal(username=user["username"]).dict(),
         secret_key=secret_key,
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
     )
@@ -34,7 +35,7 @@ def create_access_token_for_user(user: User, secret_key: str) -> str:
 
 def get_username_from_token(token: str, secret_key: str) -> str:
     try:
-        return JWTUser(**jwt.decode(token, secret_key, algorithms=[ALGORITHM])).username
+        return JWTPrincipal(**jwt.decode(token, secret_key, algorithms=[ALGORITHM])).username
     except jwt.PyJWTError as decode_error:
         raise ValueError("unable to decode JWT token") from decode_error
     except ValidationError as validation_error:
