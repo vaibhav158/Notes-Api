@@ -1,5 +1,5 @@
 venv/
-# ./notesdb.sqlite
-# ./notesdb.sqlite-shm
-# ./notesdb.sqlite-wal
+notesdb.sqlite
+notesdb.sqlite-shm
+notesdb.sqlite-wal
 migrations

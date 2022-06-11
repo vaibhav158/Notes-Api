@@ -5,21 +5,25 @@ from src.database import db
 from src.auth.routes.auth import auth_router
 
 
-settings = get_app_settings()
-settings.configure_logging()
+def get_application() -> FastAPI:
+    settings = get_app_settings()
+    settings.configure_logging()
 
-app = FastAPI(**settings.fastapi_kwargs)
+    app = FastAPI(**settings.fastapi_kwargs)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.allowed_hosts,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    db.init_db(app)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.allowed_hosts,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+    return app
 
-db.init_db(app)
-app.include_router(auth_router, prefix='/auth', tags=['auth'])
+
+app = get_application()
+app.include_router(auth_router)
 
 
 @app.get("/")

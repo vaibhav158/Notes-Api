@@ -18,7 +18,7 @@ def init_db(app: FastAPI):
     register_tortoise(
         app,
         db_url='sqlite://notesdb.sqlite',
-        modules={"models": ["data.model"]},
+        modules={"models": ["data.model.user", "data.model.note"]},
         generate_schemas=False,
         add_exception_handlers=False,
     )

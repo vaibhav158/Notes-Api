@@ -1,5 +1,5 @@
-from domain.model.base import MyBaseModel
+from pydantic import BaseModel
 
-class User(MyBaseModel):
+class User(BaseModel):
     username: str
     password: str
