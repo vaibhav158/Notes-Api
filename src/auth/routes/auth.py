@@ -1,6 +1,6 @@
 from domain.model.user import User
 from domain.model.jwt import Token
-from data.repository.UserRepository import UserRepository
+from data.repository.user_repository import UserRepository
 from fastapi import HTTPException, status, Depends
 from src.auth.jwt_service import create_access_token_for_user
 from src.auth.encryptor_service import get_password_hash, verify_password
@@ -8,14 +8,26 @@ from src.config import AppSettings, get_app_settings
 from typing import Dict
 from src.dependencies.auth import get_current_user
 from fastapi import APIRouter
+from pydantic import BaseModel
 
 
 auth_router = APIRouter(prefix='/auth', tags=['auth'])
 
 
-@auth_router.post("/register", response_model=Token)
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    token: Token
+
+
+class UserRequest(BaseModel):
+    username: str
+    password: str
+
+
+@auth_router.post("/register", response_model=UserResponse)
 async def register_user(
-    user: User,
+    user: UserRequest,
     app_settings: AppSettings = Depends(get_app_settings),
     user_repository: UserRepository = Depends()
 ):
@@ -49,20 +61,23 @@ async def register_user(
             detail="Password is too short"
         )
 
-    user_obj = User(
-        username=user.username,
-        password=get_password_hash(user.password)
+    await user_repository.add_user(user.username, get_password_hash(user.password))
+
+    user_obj = await user_repository.get_user_by_username(username=user.username)
+
+    token = Token(
+        access_token=get_access_token_for_user(user_obj.username, app_settings)
     )
 
-    await user_repository.add_user(user_obj)
-
-    return Token(
-        access_token=get_access_token_for_user(user_obj, app_settings)
+    return UserResponse(
+        id=user_obj.id,
+        username=user_obj.username,
+        token = token
     )
 
 
-def get_access_token_for_user(user: User, settings: AppSettings) -> str:
-    return create_access_token_for_user(user, str(settings.secret_key.get_secret_value()))
+def get_access_token_for_user(username, settings: AppSettings) -> str:
+    return create_access_token_for_user(username, str(settings.secret_key.get_secret_value()))
 
 
 @auth_router.get('/user/me')
@@ -70,9 +85,9 @@ async def get_current_user_info(user: User = Depends(get_current_user)):
     return user
 
 
-@auth_router.post('/login', response_model=Token)
+@auth_router.post('/login', response_model=UserResponse)
 async def login_user(
-    user: User,
+    user: UserRequest,
     app_settings: AppSettings = Depends(get_app_settings),
     user_repository: UserRepository = Depends()
 ):
@@ -102,6 +117,12 @@ async def login_user(
             detail="Incorrect Password"
         )
 
-    return Token(
-        access_token=get_access_token_for_user(user_obj, app_settings)
+    token = Token(
+        access_token=get_access_token_for_user(user_obj.username, app_settings)
+    )
+
+    return UserResponse(
+        id=user_obj.id,
+        username=user_obj.username,
+        token = token
     )

@@ -8,9 +8,10 @@ class UserRepository():
         print(f'username: {username}')
         user = await DBUser.get(username=username)
         return DomainUser(
+            id=user.id,
             username=user.username,
             password=user.password
         )
 
-    async def add_user(self, user: DomainUser):
-        await DBUser.create(username=user.username, password=user.password)
+    async def add_user(self, username: str, hashed_password: str):
+        await DBUser.create(username=username, password=hashed_password)

@@ -3,6 +3,7 @@ from starlette.middleware.cors import CORSMiddleware
 from src.config import get_app_settings
 from src.database import db
 from src.auth.routes.auth import auth_router
+from src.note.routes.note_crud import note_router
 
 
 def get_application() -> FastAPI:
@@ -24,6 +25,7 @@ def get_application() -> FastAPI:
 
 app = get_application()
 app.include_router(auth_router)
+app.include_router(note_router)
 
 
 @app.get("/")

@@ -10,7 +10,7 @@ from src.config import get_app_settings, AppSettings
 from domain.model.user import User
 from src.utils import error_messages
 from src.auth import jwt_service as jwt
-from data.repository.UserRepository import UserRepository
+from data.repository.user_repository import UserRepository
 from src.utils import error_messages
 
 HEADER_KEY = "Authorization"
