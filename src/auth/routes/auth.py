@@ -32,17 +32,6 @@ async def register_user(
     user_repository: UserRepository = Depends()
 ):
 
-    try:
-        user_obj = await user_repository.get_user_by_username(username=user.username)
-    except:
-        user_obj = None
-
-    if user_obj:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User with this username already exists"
-        )
-
     if not user.username or not user.password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -56,9 +45,20 @@ async def register_user(
         )
 
     if len(user.password) < 8:
-        return HTTPException(
+        raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Password is too short"
+        )
+
+    try:
+        user_obj = await user_repository.get_user_by_username(username=user.username)
+    except:
+        user_obj = None
+
+    if user_obj:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User with this username already exists"
         )
 
     await user_repository.add_user(user.username, get_password_hash(user.password))
@@ -72,7 +72,7 @@ async def register_user(
     return UserResponse(
         id=user_obj.id,
         username=user_obj.username,
-        token = token
+        token=token
     )
 
 
@@ -91,6 +91,13 @@ async def login_user(
     app_settings: AppSettings = Depends(get_app_settings),
     user_repository: UserRepository = Depends()
 ):
+
+    if not user.username or not user.password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Either Username or Passsword is not Valid"
+        )
+
     try:
         user_obj = await user_repository.get_user_by_username(username=user.username)
     except:
@@ -100,12 +107,6 @@ async def login_user(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User with this username doesn't exists"
-        )
-
-    if not user.username or not user.password:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Either Username or Passsword is not Valid"
         )
 
     is_password_valid = verify_password(
@@ -124,5 +125,5 @@ async def login_user(
     return UserResponse(
         id=user_obj.id,
         username=user_obj.username,
-        token = token
+        token=token
     )

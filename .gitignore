@@ -3,3 +3,5 @@ notesdb.sqlite
 notesdb.sqlite-shm
 notesdb.sqlite-wal
 migrations
+.coverage
+.pytest_cache
