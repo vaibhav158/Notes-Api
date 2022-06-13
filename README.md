@@ -15,7 +15,7 @@ Notes app backend _REST API_ is built with FastAPI framework with SQLite as data
 This project has two modules as following:
 
 - **`data`**: Data source and operations.
-- **`domain`**: Models and other immutable stuff.
+- **`domain`**: Models and other common stuff.
 - **`src`**: FastAPI application entry point and API routes.
 
 ## Development Setup 🖥
@@ -36,6 +36,12 @@ SECRET_KEY=ANY_RANDOM_SECRET
 - And finally to run the server, run command `uvicorn src.main:app --reload`.
 - Hit `http://127.0.0.1:8080/` and API will be live🔥.
 - After running the server, go to `http://127.0.0.1:8080/docs` to test out APIs.
+
+## Run Tests
+
+- Run Auth Tests: `python -m pytest tests/test_auth.py`
+- Run Index Tests: `python -m pytest tests/test_index.py`
+- Run Note Tests: `python -m pytest tests/test_note.py`
 
 ## Built with 🛠
 
@@ -114,7 +120,7 @@ Authorization: Bearer YOUR_AUTH_TOKEN
 ### Delete Note
 
 ```http
-DELETE http://localhost:8080/note?id=NOTE_ID_HERE
+DELETE http://localhost:8080/note/delete?id=NOTE_ID_HERE
 Content-Type: application/json
 Authorization: Bearer YOUR_AUTH_TOKEN
 ```

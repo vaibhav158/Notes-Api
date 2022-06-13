@@ -132,7 +132,7 @@ async def test_get_current_user_wrong_token(client: AsyncClient):
 async def test_get_current_user_successful(client: AsyncClient):
     
     json = { "username": "test1", "password": "mytestpassword" }
-    register_response = await client.post('/auth/register', json=json)
+    register_response = await client.post('/auth/login', json=json)
 
     access_token: str = UserResponse(**register_response.json()).token.access_token
 
