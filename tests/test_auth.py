@@ -131,7 +131,7 @@ async def test_get_current_user_wrong_token(client: AsyncClient):
 @pytest.mark.anyio
 async def test_get_current_user_successful(client: AsyncClient):
     
-    json = { "username": "test2", "password": "mytestpassword" }
+    json = { "username": "test1", "password": "mytestpassword" }
     register_response = await client.post('/auth/register', json=json)
 
     access_token: str = UserResponse(**register_response.json()).token.access_token
@@ -144,4 +144,4 @@ async def test_get_current_user_successful(client: AsyncClient):
 
     user = User(**response.json())
 
-    assert user.username == "test2"
+    assert user.username == "test1"
